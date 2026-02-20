@@ -1,0 +1,8 @@
+# Core
+flask>=3.0.0
+
+# build_quran_data.py uses only Python standard library (urllib, json, re, os, sys)
+# No additional dependencies required for data fetching.
+
+# Optional — for future Excel export feature:
+# openpyxl>=3.1.0

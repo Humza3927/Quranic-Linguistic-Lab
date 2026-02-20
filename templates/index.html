@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Quranic Linguistic Laboratory</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   RESET & VARIABLES
+══════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1A5C38; --green-dark:#123d25; --green-light:#D6EAD9;
+  --gold:#C9A84C;  --gold-light:#FDF3DC; --gold-dark:#a08230;
+  --grey:#444;     --grey-light:#F4F4F4; --grey-mid:#DDDDDD;
+  --blue:#1565C0;  --blue-light:#DDEEFF;
+  --red:#C62828;   --purple:#6A1B9A;
+  --sidebar:280px; --topbar:58px;
+  --font-ar:'Scheherazade New','Amiri',serif;
+  --font-ui:'Segoe UI',system-ui,sans-serif;
+  --radius:8px; --shadow:0 2px 12px rgba(0,0,0,.10);
+  --transition:.18s ease;
+}
+body{font-family:var(--font-ui);background:#f9f9f6;color:var(--grey);overflow:hidden;height:100vh}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════════════════════════ */
+#shell{display:flex;height:100vh;flex-direction:column}
+#topbar{height:var(--topbar);background:var(--green);display:flex;align-items:center;
+        padding:0 16px;gap:12px;flex-shrink:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#topbar .brand{font-size:1rem;font-weight:700;color:#fff;letter-spacing:.02em;white-space:nowrap}
+#topbar .brand span{color:var(--gold)}
+#main-body{display:flex;flex:1;overflow:hidden}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════════════════ */
+#sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--grey-mid);
+         display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:width var(--transition)}
+#sidebar.collapsed{width:0}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:12px 0}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--grey-mid);border-radius:4px}
+
+.nav-section{margin-bottom:4px}
+.nav-label{font-size:.68rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.08em;
+           padding:6px 14px 2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;
+          border-radius:0;transition:background var(--transition);font-size:.88rem;color:var(--grey)}
+.nav-item:hover{background:var(--grey-light)}
+.nav-item.active{background:var(--green-light);color:var(--green);font-weight:600;
+                 border-right:3px solid var(--green)}
+.nav-item .icon{width:20px;text-align:center;font-size:1rem;flex-shrink:0}
+.nav-item .badge{margin-left:auto;background:var(--gold);color:#fff;border-radius:10px;
+                 font-size:.65rem;font-weight:700;padding:1px 6px}
+
+/* Level pills */
+.level-pills{padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.level-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;
+            cursor:pointer;border:1.5px solid var(--grey-mid);transition:all var(--transition);font-size:.83rem}
+.level-pill:hover{border-color:var(--green);background:var(--green-light)}
+.level-pill.active{border-color:var(--green);background:var(--green);color:#fff;font-weight:600}
+.level-pill .lp-num{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.3);
+                    display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700}
+.level-pill.active .lp-num{background:rgba(255,255,255,.25)}
+
+/* Progress bar */
+.progress-block{padding:10px 14px;border-top:1px solid var(--grey-mid);flex-shrink:0}
+.pb-row{display:flex;justify-content:space-between;font-size:.75rem;color:#888;margin-bottom:4px}
+.pb-bar{height:6px;background:var(--grey-mid);border-radius:3px;overflow:hidden}
+.pb-fill{height:100%;background:var(--green);border-radius:3px;transition:width .5s ease}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.stat-box{background:var(--grey-light);border-radius:6px;padding:6px 8px;text-align:center}
+.stat-box .sv{font-size:1.1rem;font-weight:700;color:var(--green)}
+.stat-box .sl{font-size:.65rem;color:#888}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN CONTENT AREA
+══════════════════════════════════════════════════════════════ */
+#content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Top controls bar */
+#controls{padding:10px 16px;background:#fff;border-bottom:1px solid var(--grey-mid);
+          display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+.ctrl-label{font-size:.72rem;font-weight:600;color:#888;white-space:nowrap}
+.ctrl-sep{width:1px;height:28px;background:var(--grey-mid)}
+
+/* Injection slider */
+#inj-slider{width:120px;accent-color:var(--green);cursor:pointer}
+.inj-pct{font-size:.8rem;font-weight:700;color:var(--green);min-width:30px}
+
+/* Toggle buttons */
+.tog-btn{padding:4px 10px;font-size:.76rem;border-radius:20px;border:1.5px solid var(--grey-mid);
+         background:#fff;cursor:pointer;transition:all var(--transition);white-space:nowrap;color:var(--grey)}
+.tog-btn.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.tog-btn:hover:not(.on){border-color:var(--green);color:var(--green)}
+
+/* Surah select */
+.surah-select{padding:5px 8px;border:1.5px solid var(--grey-mid);border-radius:6px;
+              font-size:.82rem;font-family:var(--font-ui);cursor:pointer;background:#fff;
+              color:var(--grey);outline:none}
+.surah-select:focus{border-color:var(--green)}
+
+/* Main reading pane */
+#reading-pane{flex:1;overflow-y:auto;padding:24px 32px 40px}
+#reading-pane::-webkit-scrollbar{width:6px}
+#reading-pane::-webkit-scrollbar-thumb{background:var(--grey-mid);border-radius:4px}
+
+/* Panels (right drawer) */
+#panel-area{width:0;overflow:hidden;transition:width var(--transition);background:#fff;
+            border-left:1px solid var(--grey-mid);flex-shrink:0}
+#panel-area.open{width:340px}
+.panel-inner{width:340px;height:100%;display:flex;flex-direction:column;overflow:hidden}
+.panel-header{padding:14px 16px;background:var(--green);color:#fff;display:flex;
+              justify-content:space-between;align-items:center;flex-shrink:0}
+.panel-header h3{font-size:.95rem;font-weight:700}
+.panel-close{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:0 4px}
+.panel-body{flex:1;overflow-y:auto;padding:16px}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--grey-mid)}
+
+/* ═══════════════════════════════════════════════════════════════
+   SURAH HEADER
+══════════════════════════════════════════════════════════════ */
+.surah-header{text-align:center;margin-bottom:28px;padding-bottom:20px;
+              border-bottom:2px solid var(--gold-light)}
+.surah-name-ar{font-family:var(--font-ar);font-size:2.4rem;color:var(--green);
+               direction:rtl;margin-bottom:4px;line-height:1.4}
+.surah-name-en{font-size:1rem;color:#888;margin-bottom:6px}
+.surah-desc{font-size:.83rem;color:#aaa;font-style:italic;max-width:500px;margin:0 auto}
+
+/* Bismillah banner */
+.bismillah{text-align:center;font-family:var(--font-ar);font-size:2rem;color:var(--green);
+           direction:rtl;margin-bottom:24px;padding:14px;
+           background:linear-gradient(135deg,var(--gold-light),#fff);
+           border-radius:var(--radius);border:1px solid var(--gold)}
+
+/* ═══════════════════════════════════════════════════════════════
+   VERSE RENDERING
+══════════════════════════════════════════════════════════════ */
+.verse-block{margin-bottom:22px;padding:18px 20px;border-radius:var(--radius);
+             background:#fff;border:1px solid var(--grey-mid);
+             transition:border-color var(--transition)}
+.verse-block:hover{border-color:var(--green-light)}
+
+.verse-number{display:inline-flex;align-items:center;justify-content:center;
+              width:28px;height:28px;border-radius:50%;background:var(--green);
+              color:#fff;font-size:.72rem;font-weight:700;margin-bottom:10px;flex-shrink:0}
+
+/* Arabic line — RTL flex */
+.arabic-line{direction:rtl;display:flex;flex-wrap:wrap;gap:var(--word-gap,8px);
+             align-items:baseline;margin-bottom:12px;justify-content:flex-end;
+             font-family:var(--font-ar);font-size:1.6rem;line-height:2.2}
+
+/* English line — injected hybrid */
+.english-line{font-size:.9rem;line-height:1.7;color:#555;opacity:var(--en-opacity,1);
+              display:flex;flex-wrap:wrap;gap:4px;align-items:baseline}
+
+/* Individual word tokens */
+.word-token{position:relative;cursor:pointer;transition:all var(--transition);
+            display:inline-flex;flex-direction:column;align-items:center;border-radius:4px;
+            padding:1px 4px}
+.word-token:hover{background:var(--gold-light)}
+.word-token.glowing{background:var(--gold-light)!important;
+                    box-shadow:0 0 0 2px var(--gold)!important}
+
+/* Arabic token variants */
+.w-arabic{font-family:var(--font-ar);font-size:1.6rem;direction:rtl;
+          transition:font-size var(--transition),color var(--transition)}
+.w-arabic.freq-1{font-weight:700;color:var(--green)}
+.w-arabic.freq-2{font-weight:600}
+.w-arabic.freq-3{font-weight:400}
+.w-arabic.freq-4{font-weight:300;color:#888}
+.w-arabic.freq-5{font-weight:200;color:#aaa}
+
+/* Part of speech colouring */
+.pos-noun   .w-arabic{color:var(--blue)!important}
+.pos-verb   .w-arabic{color:var(--red)!important}
+.pos-particle .w-arabic{color:#888!important}
+.pos-pronoun  .w-arabic{color:var(--purple)!important}
+
+/* Cluster colour dots */
+.cluster-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:3px}
+
+/* English token (inline in English line) */
+.en-token{display:inline;cursor:pointer;border-radius:3px;padding:0 2px;
+          transition:background var(--transition)}
+.en-token.injected{font-family:var(--font-ar);font-size:1.1rem;
+                   direction:rtl;font-weight:700;padding:0 4px}
+.en-token:hover{background:var(--gold-light)}
+
+/* Morpheme split display */
+.morpheme-wrap{display:inline-flex;gap:1px;direction:rtl}
+.morph-seg{padding:0 2px;border-radius:2px;font-family:var(--font-ar)}
+.morph-prefix{color:var(--gold-dark);font-size:.85em;opacity:.8}
+.morph-root  {color:var(--green);font-weight:700}
+.morph-suffix{color:#888;font-size:.85em;opacity:.8}
+
+/* Tajweed highlights */
+.tj-madd   {color:#1565C0}
+.tj-ghunnah{background:#fce4ec;border-radius:2px}
+.tj-qalqala{text-decoration:underline;text-decoration-color:var(--gold)}
+
+/* Hifz ghost mode */
+body.hifz-mode .english-line{filter:blur(3px);transition:filter .2s}
+body.hifz-mode .english-line:hover{filter:none}
+
+/* What's Left mode */
+.word-token.is-known.whats-left-mode{opacity:.15}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOOLTIPS
+══════════════════════════════════════════════════════════════ */
+#tooltip{position:fixed;z-index:9999;pointer-events:none;opacity:0;transition:opacity .15s;
+         max-width:280px}
+#tooltip.visible{opacity:1}
+.tt-box{background:#1c1c1e;color:#fff;border-radius:10px;padding:12px 14px;
+        box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:.82rem;line-height:1.5}
+.tt-ar{font-family:var(--font-ar);font-size:1.5rem;direction:rtl;color:var(--gold);
+       margin-bottom:4px;text-align:right}
+.tt-tr{color:#aaa;font-style:italic;font-size:.78rem;margin-bottom:6px}
+.tt-en{font-weight:600;margin-bottom:8px}
+.tt-meta{display:flex;flex-direction:column;gap:3px}
+.tt-row{display:flex;justify-content:space-between;gap:8px;font-size:.74rem}
+.tt-key{color:#888}
+.tt-val{color:#ddd;text-align:right}
+.tt-root-fam{margin-top:8px;padding-top:8px;border-top:1px solid #333}
+.tt-root-label{font-size:.7rem;color:#888;margin-bottom:4px;font-weight:600;text-transform:uppercase}
+.tt-root-words{display:flex;flex-wrap:wrap;gap:4px;direction:rtl}
+.tt-rw{background:#333;padding:2px 6px;border-radius:4px;font-family:var(--font-ar);font-size:.9rem}
+.fam-bar{height:4px;background:#333;border-radius:2px;margin-top:4px}
+.fam-fill{height:100%;background:var(--gold);border-radius:2px}
+
+/* ═══════════════════════════════════════════════════════════════
+   WORD DATABASE PANEL
+══════════════════════════════════════════════════════════════ */
+.wdb-search{width:100%;padding:8px 10px;border:1.5px solid var(--grey-mid);border-radius:6px;
+            font-size:.85rem;outline:none;margin-bottom:12px}
+.wdb-search:focus{border-color:var(--green)}
+.wdb-item{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:6px;
+          cursor:pointer;transition:background var(--transition);border-bottom:1px solid #f0f0f0}
+.wdb-item:hover{background:var(--grey-light)}
+.wdb-ar{font-family:var(--font-ar);font-size:1.3rem;direction:rtl;color:var(--green);width:52px;text-align:right;flex-shrink:0}
+.wdb-info{flex:1;min-width:0}
+.wdb-tr{font-size:.8rem;font-weight:600;color:var(--grey)}
+.wdb-en{font-size:.75rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wdb-rank{font-size:.7rem;color:#bbb;flex-shrink:0}
+.wdb-fam{width:40px;height:4px;background:var(--grey-mid);border-radius:2px;flex-shrink:0}
+.wdb-fam-fill{height:100%;background:var(--gold);border-radius:2px}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLUSTER PANEL
+══════════════════════════════════════════════════════════════ */
+.cluster-card{border-radius:8px;margin-bottom:10px;overflow:hidden;border:1px solid var(--grey-mid)}
+.cluster-head{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;
+              cursor:pointer;font-size:.86rem;font-weight:600}
+.cluster-head .toggle-icon{font-size:.8rem;transition:transform var(--transition)}
+.cluster-head.open .toggle-icon{transform:rotate(180deg)}
+.cluster-body{padding:8px 12px;display:none;flex-wrap:wrap;gap:6px;direction:rtl}
+.cluster-body.open{display:flex}
+.cl-word{background:#fff;border:1px solid var(--grey-mid);border-radius:20px;
+         padding:3px 10px;cursor:pointer;transition:all var(--transition)}
+.cl-word:hover{border-color:var(--green);background:var(--green-light)}
+.cl-word .ar{font-family:var(--font-ar);font-size:1rem}
+.cl-word .en{font-size:.68rem;color:#888;margin-top:1px}
+
+/* Cluster toggles in controls */
+.cl-toggle{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;
+           border:1.5px solid var(--grey-mid);cursor:pointer;font-size:.73rem;
+           transition:all var(--transition);white-space:nowrap}
+.cl-toggle.active{color:#fff;border-color:transparent;font-weight:600}
+.cl-toggle .cl-dot{width:8px;height:8px;border-radius:50%}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEATMAP VIEW
+══════════════════════════════════════════════════════════════ */
+.heatmap-grid{display:flex;flex-wrap:wrap;gap:6px;direction:rtl;margin-top:12px}
+.hm-word{padding:6px 10px;border-radius:6px;cursor:pointer;text-align:center;
+         font-family:var(--font-ar);direction:rtl;transition:transform var(--transition)}
+.hm-word:hover{transform:scale(1.1)}
+.hm-word .ar{font-size:1.1rem}
+.hm-word .cnt{font-size:.65rem;opacity:.7}
+.hm-b1{background:#1A5C38;color:#fff;font-size:1.3rem}
+.hm-b2{background:#2E7D32;color:#fff}
+.hm-b3{background:#558B2F;color:#fff}
+.hm-b4{background:#8BC34A;color:#fff}
+.hm-b5{background:#DCEDC8;color:#555}
+
+/* ═══════════════════════════════════════════════════════════════
+   CORPUS / SEARCH
+══════════════════════════════════════════════════════════════ */
+.search-result{padding:10px 8px;border-bottom:1px solid #f0f0f0;cursor:pointer;
+               transition:background var(--transition);display:flex;align-items:center;gap:10px}
+.search-result:hover{background:var(--grey-light)}
+.sr-ar{font-family:var(--font-ar);font-size:1.4rem;direction:rtl;color:var(--green);width:52px;text-align:right}
+.sr-info .sr-tr{font-weight:600;font-size:.84rem}
+.sr-info .sr-en{font-size:.78rem;color:#888}
+.sr-info .sr-root{font-size:.72rem;color:#aaa}
+.empty-state{text-align:center;padding:40px 20px;color:#ccc}
+.empty-state .es-icon{font-size:3rem;margin-bottom:12px}
+.empty-state .es-msg{font-size:.9rem}
+
+/* ═══════════════════════════════════════════════════════════════
+   ROOT EXPLORER
+══════════════════════════════════════════════════════════════ */
+.root-family-grid{display:flex;flex-wrap:wrap;gap:8px;direction:rtl;margin-top:10px}
+.rf-card{background:var(--green-light);border:1px solid var(--green);border-radius:8px;
+         padding:8px 12px;text-align:center;cursor:pointer;min-width:80px}
+.rf-card .rf-ar{font-family:var(--font-ar);font-size:1.2rem;color:var(--green)}
+.rf-card .rf-tr{font-size:.7rem;color:#888}
+.rf-card .rf-en{font-size:.75rem;font-weight:600;color:var(--grey)}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS PANEL
+══════════════════════════════════════════════════════════════ */
+.setting-row{display:flex;align-items:center;justify-content:space-between;
+             padding:10px 0;border-bottom:1px solid #f4f4f4}
+.setting-row:last-child{border:none}
+.setting-label{font-size:.83rem;font-weight:600}
+.setting-sub{font-size:.72rem;color:#aaa;margin-top:1px}
+.range-inp{width:100px;accent-color:var(--green)}
+.switch{position:relative;display:inline-block;width:38px;height:21px}
+.switch input{display:none}
+.slider-sw{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:21px;
+           transition:var(--transition)}
+.slider-sw::before{content:"";position:absolute;width:17px;height:17px;left:2px;bottom:2px;
+                   background:#fff;border-radius:50%;transition:var(--transition)}
+input:checked + .slider-sw{background:var(--green)}
+input:checked + .slider-sw::before{transform:translateX(17px)}
+
+/* Profile cards */
+.profile-card{border:1.5px solid var(--grey-mid);border-radius:8px;padding:12px;margin-bottom:8px;
+              cursor:pointer;transition:all var(--transition)}
+.profile-card:hover{border-color:var(--green);background:var(--green-light)}
+.profile-card.active{border-color:var(--green);background:var(--green);color:#fff}
+.pc-label{font-weight:700;font-size:.88rem;margin-bottom:3px}
+.pc-desc{font-size:.75rem;opacity:.75}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV LEVEL DESCRIPTIONS
+══════════════════════════════════════════════════════════════ */
+.level-desc-bar{background:var(--gold-light);border:1px solid var(--gold);border-radius:6px;
+                padding:8px 14px;margin-bottom:14px;font-size:.8rem;color:#7a6010;
+                display:flex;align-items:center;gap:8px}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOPBAR UTILITIES
+══════════════════════════════════════════════════════════════ */
+.tb-btn{background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 10px;
+        border-radius:6px;cursor:pointer;font-size:.78rem;transition:background var(--transition);
+        display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tb-btn:hover{background:rgba(255,255,255,.22)}
+.tb-btn.active{background:var(--gold)!important}
+.tb-spacer{flex:1}
+
+/* ═══════════════════════════════════════════════════════════════
+   WAZN / PATTERNS PANEL
+══════════════════════════════════════════════════════════════ */
+.wazn-card{background:#fff;border:1px solid var(--grey-mid);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.wazn-head{padding:10px 12px;background:var(--grey-light);font-size:.83rem;font-weight:700;
+           display:flex;justify-content:space-between;align-items:center}
+.wazn-count{background:var(--green);color:#fff;border-radius:10px;font-size:.68rem;padding:1px 7px}
+.wazn-example{font-family:var(--font-ar);font-size:1rem;direction:rtl;color:var(--gold-dark)}
+.wazn-matches{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;direction:rtl}
+.wazn-match{font-family:var(--font-ar);font-size:1rem;background:var(--green-light);
+            border-radius:4px;padding:2px 8px;cursor:pointer}
+.wazn-match:hover{background:var(--green);color:#fff}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;
+               display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#fff;border-radius:12px;max-width:480px;width:100%;max-height:80vh;
+           overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--grey-mid);
+              display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff}
+.modal-header h3{font-size:1rem;font-weight:700;color:var(--green)}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888}
+.modal-body{padding:20px}
+
+/* Export section */
+.export-option{border:1.5px solid var(--grey-mid);border-radius:8px;padding:12px;margin-bottom:8px;
+               cursor:pointer;transition:all var(--transition);display:flex;align-items:center;gap:12px}
+.export-option:hover{border-color:var(--green);background:var(--green-light)}
+.export-icon{font-size:1.5rem}
+.export-info .ei-title{font-weight:600;font-size:.88rem}
+.export-info .ei-desc{font-size:.77rem;color:#888}
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════════════════════════ */
+#notif{position:fixed;bottom:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:6px}
+.notif-item{background:#1c1c1e;color:#fff;padding:10px 16px;border-radius:8px;font-size:.82rem;
+            box-shadow:var(--shadow);animation:slideIn .2s ease}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE / SPACING VARIABLES (overridden by JS)
+══════════════════════════════════════════════════════════════ */
+.arabic-line{--word-gap:8px}
+.english-line{--en-opacity:1}
+body.hifz-mode .english-line{--en-opacity:0.15}
+
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:#ccc;font-size:.9rem}
+.spin{display:inline-block;width:32px;height:32px;border:3px solid var(--grey-mid);
+      border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* POS legend */
+.pos-legend{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;font-size:.72rem}
+.pos-chip{padding:2px 8px;border-radius:10px;font-weight:600}
+.pos-chip.noun    {background:var(--blue-light);color:var(--blue)}
+.pos-chip.verb    {background:#FFEBEE;color:var(--red)}
+.pos-chip.particle{background:#F3E5F5;color:var(--purple)}
+.pos-chip.pronoun {background:#EDE7F6;color:#512DA8}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE
+══════════════════════════════════════════════════════════════ */
+body.dark{
+  --green:#66BB6A; --green-dark:#388E3C; --green-light:#1B2E1D;
+  --gold:#FFD54F;  --gold-light:#2C2410; --gold-dark:#FFC107;
+  --grey:#E0E0E0;  --grey-light:#1E1E1E; --grey-mid:#3A3A3A;
+  --blue:#64B5F6;  --blue-light:#0D2137;
+  --red:#EF9A9A;   --purple:#CE93D8;
+  background:#121212; color:#E0E0E0;
+}
+body.dark #sidebar{background:#1A1A1A;border-color:#333}
+body.dark #controls{background:#1A1A1A;border-color:#333}
+body.dark #reading-pane{background:#121212}
+body.dark .verse-block{background:#1E1E1E;border-color:#333}
+body.dark .verse-block:hover{border-color:#2E4D30}
+body.dark .surah-select{background:#1E1E1E;color:#E0E0E0;border-color:#444}
+body.dark .tog-btn{background:#1E1E1E;color:#CCC;border-color:#444}
+body.dark .tog-btn.on{background:var(--green);border-color:var(--green);color:#fff}
+body.dark .tog-btn:hover:not(.on){border-color:var(--green);color:var(--green)}
+body.dark .modal-box{background:#1E1E1E;color:#E0E0E0}
+body.dark .modal-header{background:#1E1E1E;border-color:#333}
+body.dark .modal-close{color:#aaa}
+body.dark .panel-inner{background:#1E1E1E}
+body.dark .panel-body{background:#1E1E1E}
+body.dark .wdb-item{border-color:#2A2A2A}
+body.dark .wdb-item:hover{background:#252525}
+body.dark .wdb-tr{color:#DDD}
+body.dark .wdb-en{color:#999}
+body.dark .nav-item{color:#CCC}
+body.dark .nav-item:hover{background:#252525}
+body.dark .nav-item.active{background:#1B2E1D;color:var(--green)}
+body.dark .level-pill{border-color:#444;color:#CCC}
+body.dark .level-pill:hover{background:#1B2E1D;border-color:var(--green)}
+body.dark .progress-block{border-color:#333}
+body.dark .stat-box{background:#252525}
+body.dark .stat-box .sl{color:#999}
+body.dark .cluster-card{border-color:#333}
+body.dark .cluster-head{background:#252525;color:#DDD}
+body.dark .cluster-body{background:#1A1A1A!important}
+body.dark .cl-word{background:#1E1E1E;border-color:#444}
+body.dark .cl-word:hover{background:#1B2E1D;border-color:var(--green)}
+body.dark .wazn-card{background:#1E1E1E;border-color:#333}
+body.dark .wazn-head{background:#252525;color:#DDD}
+body.dark .rf-card{background:#1B2E1D;border-color:var(--green)}
+body.dark .rf-card .rf-tr,.rf-card .rf-en{color:#aaa}
+body.dark .export-option{border-color:#333;color:#DDD}
+body.dark .export-option:hover{background:#1B2E1D;border-color:var(--green)}
+body.dark .export-info .ei-desc{color:#999}
+body.dark .profile-card{border-color:#333;color:#DDD}
+body.dark .profile-card:hover{background:#1B2E1D;border-color:var(--green)}
+body.dark .pc-desc{color:#aaa}
+body.dark .setting-row{border-color:#2A2A2A}
+body.dark .setting-label{color:#DDD}
+body.dark .setting-sub{color:#888}
+body.dark #view-worddb,body.dark #view-heatmap,body.dark #view-corpus,
+body.dark #view-wazn,body.dark #view-settings,body.dark #view-bookview{background:#121212}
+body.dark .wdb-search{background:#1E1E1E;color:#E0E0E0;border-color:#444}
+body.dark .wdb-search::placeholder{color:#666}
+body.dark .search-result{border-color:#2A2A2A}
+body.dark .search-result:hover{background:#252525}
+body.dark .sr-info .sr-tr{color:#DDD}
+body.dark .sr-info .sr-en{color:#999}
+body.dark .sr-info .sr-root{color:#777}
+body.dark .level-desc-bar{background:#2C2410;border-color:var(--gold);color:#FFD54F}
+body.dark .bismillah{background:linear-gradient(135deg,#2C2410,#1E1E1E);border-color:var(--gold)}
+body.dark .surah-header{border-color:#2C2410}
+body.dark .surah-name-en,.surah-desc{color:#999}
+body.dark .pos-legend{background:#1A1A1A;border-color:#333}
+body.dark .pos-chip.noun{background:#0D2137;color:#64B5F6}
+body.dark .pos-chip.verb{background:#2D0A0A;color:#EF9A9A}
+body.dark .pos-chip.particle{background:#1A0A2E;color:#CE93D8}
+body.dark .pos-chip.pronoun{background:#1A0A2E;color:#B39DDB}
+body.dark .hm-b5{background:#2A3A2A;color:#CCC}
+body.dark .empty-state{color:#555}
+body.dark .pb-bar{background:#333}
+body.dark .wdb-fam{background:#333}
+body.dark .fam-bar{background:#333}
+body.dark .ctrl-label{color:#999}
+body.dark .ctrl-sep{background:#444}
+body.dark .nav-label{color:#666}
+body.dark .pb-row{color:#888}
+body.dark .pb-row span:last-child{color:var(--green)}
+body.dark h2,body.dark h3{color:var(--green)}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOK VIEW
+══════════════════════════════════════════════════════════════ */
+#view-bookview{flex-direction:column!important}
+.bv-controls{padding:10px 16px;background:#fff;border-bottom:1px solid var(--grey-mid);
+             display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0}
+body.dark .bv-controls{background:#1A1A1A;border-color:#333}
+.bv-scroll{flex:1;overflow-y:auto;padding:40px 48px 60px}
+.bv-scroll::-webkit-scrollbar{width:6px}
+.bv-scroll::-webkit-scrollbar-thumb{background:var(--grey-mid);border-radius:4px}
+body.dark .bv-scroll{background:#121212}
+
+.book-page{max-width:680px;margin:0 auto}
+
+.book-surah-header{text-align:center;margin-bottom:36px;padding-bottom:24px;
+                   border-bottom:2px solid var(--gold-light)}
+.book-name-ar{font-family:var(--font-ar);font-size:3rem;color:var(--green);
+              direction:rtl;margin-bottom:6px;line-height:1.4}
+.book-name-en{font-size:1.05rem;color:#888;margin-bottom:6px;font-weight:600;letter-spacing:.03em}
+.book-desc{font-size:.83rem;color:#aaa;font-style:italic;max-width:480px;margin:0 auto;line-height:1.6}
+body.dark .book-name-en{color:#999}
+body.dark .book-desc{color:#777}
+
+.book-bismillah{text-align:center;font-family:var(--font-ar);font-size:2.2rem;
+                color:var(--green);direction:rtl;margin-bottom:36px;padding:18px 24px;
+                background:linear-gradient(135deg,var(--gold-light),#fff);
+                border-radius:var(--radius);border:1px solid var(--gold);line-height:1.6}
+body.dark .book-bismillah{background:linear-gradient(135deg,#2C2410,#1E1E1E);border-color:var(--gold)}
+
+.book-text{font-size:1.13rem;line-height:2.6;color:#3a3a3a;
+           font-family:Georgia,'Times New Roman',serif;text-align:justify}
+body.dark .book-text{color:#C8C8C8}
+
+.bv-english{display:inline;color:inherit}
+.bv-arabic{font-family:var(--font-ar);font-size:1.45rem;font-weight:700;
+           display:inline-block;vertical-align:middle;line-height:1;
+           margin:0 3px 0 3px;padding:0 2px;border-radius:3px;
+           transition:background var(--transition)}
+.bv-sep{display:inline-block;margin:0 5px;color:var(--gold-dark);
+        font-size:.78rem;opacity:.65;vertical-align:middle;
+        font-family:var(--font-ar);direction:rtl}
+</style>
+</head>
+<body>
+
+<div id="shell">
+
+  <!-- ═══════════════ TOP BAR ═══════════════ -->
+  <div id="topbar">
+    <button class="tb-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <div class="brand">🕌 <span>Quranic</span> Linguistic Lab</div>
+    <div class="tb-spacer"></div>
+
+    <!-- View mode buttons -->
+    <button class="tb-btn" id="tb-reading"  onclick="setView('reading')"  title="Reading View">📖 Reading</button>
+    <button class="tb-btn" id="tb-worddb"   onclick="setView('worddb')"   title="Word Database">📚 Database</button>
+    <button class="tb-btn" id="tb-heatmap"  onclick="setView('heatmap')"  title="Frequency Heatmap">🔥 Heatmap</button>
+    <button class="tb-btn" id="tb-corpus"   onclick="setView('corpus')"   title="Corpus Search">🔍 Corpus</button>
+    <button class="tb-btn" id="tb-wazn"     onclick="setView('wazn')"     title="Pattern Miner">⚡ Patterns</button>
+    <button class="tb-btn" id="tb-settings" onclick="setView('settings')" title="Settings & Profiles">⚙️ Settings</button>
+    <button class="tb-btn" id="tb-bookview" onclick="setView('bookview')" title="Book View">📖 Book View</button>
+
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.2);margin:0 4px"></div>
+    <button class="tb-btn" id="tb-darkmode" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙 Dark</button>
+    <button class="tb-btn" onclick="openExportModal()" title="Export">📥 Export</button>
+  </div>
+
+  <div id="main-body">
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <div id="sidebar">
+      <div class="sidebar-scroll">
+
+        <div class="nav-section">
+          <div class="nav-label">Navigation Level</div>
+          <div class="level-pills">
+            <div class="level-pill active" id="lp-qaida"   onclick="setLevel('qaida')">
+              <div class="lp-num">1</div><div><div style="font-weight:600">Qaida</div><div style="font-size:.72rem;opacity:.7">The Decoder</div></div></div>
+            <div class="level-pill" id="lp-tilawah" onclick="setLevel('tilawah')">
+              <div class="lp-num">2</div><div><div style="font-weight:600">Tilawah</div><div style="font-size:.72rem;opacity:.7">The Fluid Reader</div></div></div>
+            <div class="level-pill" id="lp-hifz"    onclick="setLevel('hifz')">
+              <div class="lp-num">3</div><div><div style="font-weight:600">Hifz</div><div style="font-size:.72rem;opacity:.7">The Memoriser</div></div></div>
+            <div class="level-pill" id="lp-sarf"    onclick="setLevel('sarf')">
+              <div class="lp-num">4</div><div><div style="font-weight:600">Sarf</div><div style="font-size:.72rem;opacity:.7">Pattern Recogniser</div></div></div>
+            <div class="level-pill" id="lp-nahw"    onclick="setLevel('nahw')">
+              <div class="lp-num">5</div><div><div style="font-weight:600">Nahw</div><div style="font-size:.72rem;opacity:.7">The Architect</div></div></div>
+            <div class="level-pill" id="lp-alim"    onclick="setLevel('alim')">
+              <div class="lp-num">6</div><div><div style="font-weight:600">Alim</div><div style="font-size:.72rem;opacity:.7">The Researcher</div></div></div>
+          </div>
+        </div>
+
+        <div class="nav-section" style="margin-top:8px">
+          <div class="nav-label">Panels</div>
+          <div class="nav-item" id="nav-clusters" onclick="openPanel('clusters')">
+            <span class="icon">🎨</span> Thematic Clusters
+          </div>
+          <div class="nav-item" id="nav-wordlist" onclick="openPanel('wordlist')">
+            <span class="icon">📋</span> Word List
+          </div>
+          <div class="nav-item" id="nav-roots" onclick="openPanel('roots')">
+            <span class="icon">🌳</span> Root Explorer
+          </div>
+        </div>
+
+        <div class="nav-section" style="margin-top:8px">
+          <div class="nav-label">Surahs</div>
+          <div id="surah-nav-list"></div>
+        </div>
+
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-block">
+        <div class="pb-row">
+          <span>Words seen</span>
+          <span id="pb-pct">0%</span>
+        </div>
+        <div class="pb-bar"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="sv" id="stat-seen">0</div><div class="sl">Seen</div></div>
+          <div class="stat-box"><div class="sv" id="stat-known">0</div><div class="sl">Known</div></div>
+          <div class="stat-box"><div class="sv" id="stat-total">0</div><div class="sl">Total</div></div>
+          <div class="stat-box"><div class="sv" id="stat-unseen">0</div><div class="sl">Unseen</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ CONTENT ═══════════════ -->
+    <div id="content">
+
+      <!-- Controls bar -->
+      <div id="controls">
+
+        <!-- Surah selector -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">Surah</span>
+          <select class="surah-select" id="surah-select" onchange="loadSurah(this.value)"></select>
+        </div>
+
+        <div class="ctrl-sep"></div>
+
+        <!-- Injection slider -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">Arabic %</span>
+          <input type="range" id="inj-slider" min="0" max="100" step="5" value="25"
+                 oninput="onInjectionChange(this.value)">
+          <span class="inj-pct" id="inj-pct">25%</span>
+        </div>
+
+        <div class="ctrl-sep"></div>
+
+        <!-- Toggle features -->
+        <div class="ctrl-group" style="flex-wrap:wrap;gap:5px">
+          <button class="tog-btn" id="tog-translation" onclick="toggleSetting('show_translation')" title="Show/hide English translation">EN Translation</button>
+          <button class="tog-btn" id="tog-morpheme" onclick="toggleSetting('show_morpheme_split')" title="Show morpheme breakdown">Morpheme Split</button>
+          <button class="tog-btn" id="tog-heatmap" onclick="toggleSetting('heatmap')" title="Frequency heatmap">Heatmap</button>
+          <button class="tog-btn" id="tog-color-pos" onclick="toggleSetting('color_pos')" title="Color by part of speech">POS Color</button>
+          <button class="tog-btn" id="tog-hifz" onclick="toggleSetting('hifz_ghost')" title="Ghost English (Hifz mode)">Ghost EN</button>
+          <button class="tog-btn" id="tog-whats-left" onclick="toggleSetting('whats_left_mode')" title="Hide known words">What's Left</button>
+        </div>
+
+        <div class="ctrl-sep"></div>
+
+        <!-- Word spacing -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">Spacing</span>
+          <input type="range" min="60" max="300" step="10" value="100" id="spacing-slider"
+                 oninput="onSpacingChange(this.value)" style="width:70px;accent-color:var(--green)">
+        </div>
+
+        <!-- Arabic font size -->
+        <div class="ctrl-group">
+          <span class="ctrl-label">AR Size</span>
+          <input type="range" min="1.0" max="3.0" step="0.1" value="1.6" id="font-size-slider"
+                 oninput="onFontSizeChange(this.value)" style="width:70px;accent-color:var(--green)">
+        </div>
+
+      </div>
+
+      <!-- POS Legend (hidden unless POS mode on) -->
+      <div class="pos-legend" id="pos-legend" style="display:none;background:#fff;border-bottom:1px solid var(--grey-mid)">
+        <div class="pos-chip noun">■ Noun (Ism)</div>
+        <div class="pos-chip verb">■ Verb (Fi'l)</div>
+        <div class="pos-chip particle">■ Particle (Harf)</div>
+        <div class="pos-chip pronoun">■ Pronoun (Damir)</div>
+      </div>
+
+      <!-- VIEWS -->
+      <div id="view-reading" class="view" style="flex:1;overflow:hidden;display:flex">
+        <div id="reading-pane">
+          <div class="loading"><div class="spin"></div><br>Loading Surah...</div>
+        </div>
+        <!-- Right panel -->
+        <div id="panel-area">
+          <div class="panel-inner">
+            <div class="panel-header">
+              <h3 id="panel-title">Panel</h3>
+              <button class="panel-close" onclick="closePanel()">✕</button>
+            </div>
+            <div class="panel-body" id="panel-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-worddb"   class="view" style="display:none;flex:1;overflow:hidden;padding:20px">
+        <div style="max-width:760px;margin:0 auto;height:100%;display:flex;flex-direction:column">
+          <h2 style="color:var(--green);margin-bottom:12px">📚 Word Database — Top 200 Quranic Words</h2>
+          <input class="wdb-search" type="search" placeholder="Search by Arabic, transliteration, meaning, root..."
+                 id="wdb-search-input" oninput="filterWordDB(this.value)">
+          <div style="flex:1;overflow-y:auto" id="wdb-list"></div>
+        </div>
+      </div>
+
+      <div id="view-heatmap"  class="view" style="display:none;flex:1;overflow-y:auto;padding:20px">
+        <div style="max-width:900px;margin:0 auto">
+          <h2 style="color:var(--green);margin-bottom:6px">🔥 Frequency Heatmap</h2>
+          <p style="font-size:.83rem;color:#888;margin-bottom:16px">Words sized and coloured by how often they appear in the Quran. Tap any word for details.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;font-size:.78rem">
+            <span style="background:#1A5C38;color:#fff;padding:2px 10px;border-radius:10px">1000+ occurrences</span>
+            <span style="background:#2E7D32;color:#fff;padding:2px 10px;border-radius:10px">200–999</span>
+            <span style="background:#558B2F;color:#fff;padding:2px 10px;border-radius:10px">50–199</span>
+            <span style="background:#8BC34A;color:#fff;padding:2px 10px;border-radius:10px">10–49</span>
+            <span style="background:#DCEDC8;color:#555;padding:2px 10px;border-radius:10px">under 10</span>
+          </div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+      </div>
+
+      <div id="view-corpus"   class="view" style="display:none;flex:1;overflow:hidden;padding:20px">
+        <div style="max-width:680px;margin:0 auto;height:100%;display:flex;flex-direction:column">
+          <h2 style="color:var(--green);margin-bottom:12px">🔍 Corpus Search</h2>
+          <input class="wdb-search" type="search" placeholder="Search by English meaning, transliteration, root, cluster..."
+                 id="corpus-search-input" oninput="corpusSearch(this.value)">
+          <div style="flex:1;overflow-y:auto" id="corpus-results">
+            <div class="empty-state"><div class="es-icon">🔍</div><div class="es-msg">Start typing to search across 200+ Quranic words</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-wazn"     class="view" style="display:none;flex:1;overflow-y:auto;padding:20px">
+        <div style="max-width:700px;margin:0 auto">
+          <h2 style="color:var(--green);margin-bottom:6px">⚡ Pattern Miner (Sarf Engine)</h2>
+          <p style="font-size:.83rem;color:#888;margin-bottom:16px">Detect morphological patterns (Awzan) — see which words share the same structural form.</p>
+          <div id="wazn-container"></div>
+          <div style="margin-top:24px">
+            <h3 style="color:var(--green);margin-bottom:10px">🌳 All Root Families</h3>
+            <div id="roots-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-settings"  class="view" style="display:none;flex:1;overflow-y:auto;padding:20px">
+        <div style="max-width:680px;margin:0 auto">
+          <h2 style="color:var(--green);margin-bottom:16px">⚙️ Settings & Profiles</h2>
+
+          <div style="background:#fff;border:1px solid var(--grey-mid);border-radius:10px;padding:16px;margin-bottom:16px">
+            <h3 style="margin-bottom:12px;font-size:.9rem;color:var(--grey)">Learning Style Profiles</h3>
+            <div id="profiles-grid"></div>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--grey-mid);border-radius:10px;padding:16px;margin-bottom:16px">
+            <h3 style="margin-bottom:12px;font-size:.9rem;color:var(--grey)">Visual Settings</h3>
+            <div class="setting-row">
+              <div><div class="setting-label">Arabic Font Size</div><div class="setting-sub">Affects Arabic text throughout app</div></div>
+              <input class="range-inp" type="range" min="1.0" max="3.0" step="0.1" value="1.6" oninput="onFontSizeChange(this.value)">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Word Spacing</div><div class="setting-sub">Gap between Arabic words</div></div>
+              <input class="range-inp" type="range" min="60" max="300" step="10" value="100" oninput="onSpacingChange(this.value)">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Translation Opacity</div><div class="setting-sub">0 = hidden, 100 = full</div></div>
+              <input class="range-inp" type="range" min="0" max="100" step="5" value="100" oninput="onTranslationOpacity(this.value)">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">Known Word Threshold</div><div class="setting-sub">Exposures needed to mark as 'known'</div></div>
+              <input class="range-inp" type="range" min="5" max="100" step="5" value="50" oninput="onKnownThreshold(this.value)">
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--grey-mid);border-radius:10px;padding:16px;margin-bottom:16px">
+            <h3 style="margin-bottom:12px;font-size:.9rem;color:var(--grey)">Progress</h3>
+            <button onclick="resetProgress()" style="padding:8px 16px;background:#FFEBEE;color:var(--red);border:1.5px solid var(--red);border-radius:6px;cursor:pointer;font-size:.83rem;font-weight:600">⚠️ Reset All Progress</button>
+          </div>
+
+          <div style="background:#fff;border:1px solid var(--grey-mid);border-radius:10px;padding:16px">
+            <h3 style="margin-bottom:4px;font-size:.9rem;color:var(--grey)">About</h3>
+            <p style="font-size:.8rem;color:#888;line-height:1.6">The Quranic Linguistic Laboratory — Open Source Quran Learning Platform v1.0.<br>
+            Built to solve the Recitation Paradox: millions can recite Arabic perfectly but have zero conscious connection to the meaning.<br><br>
+            Word data based on publicly available Quranic Arabic Corpus research. All frequency counts are approximate.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-bookview" class="view" style="display:none;flex:1;overflow:hidden">
+        <!-- Book View Controls -->
+        <div class="bv-controls">
+          <div class="ctrl-group">
+            <span class="ctrl-label">Surah</span>
+            <select class="surah-select" id="bv-surah-select" onchange="loadBookView(this.value)"></select>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-group">
+            <span class="ctrl-label">Arabic %</span>
+            <input type="range" id="bv-inj-slider" min="0" max="100" step="5" value="25"
+                   oninput="onBvInjectionChange(this.value)" style="width:110px;accent-color:var(--green)">
+            <span class="inj-pct" id="bv-inj-pct">25%</span>
+          </div>
+          <div class="ctrl-sep"></div>
+          <span style="font-size:.75rem;color:#888;font-style:italic">📖 Flowing book view — Arabic words injected inline</span>
+        </div>
+        <!-- Scrollable Book Content -->
+        <div class="bv-scroll">
+          <div class="book-page">
+            <div id="bookview-pane">
+              <div class="loading"><div class="spin"></div><br>Select a Surah to begin reading</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-body -->
+</div><!-- /shell -->
+
+<!-- ═══════════════ TOOLTIP ═══════════════ -->
+<div id="tooltip">
+  <div class="tt-box">
+    <div class="tt-ar" id="tt-ar">—</div>
+    <div class="tt-tr" id="tt-tr">—</div>
+    <div class="tt-en" id="tt-en">—</div>
+    <div class="tt-meta">
+      <div class="tt-row"><span class="tt-key">Root</span><span class="tt-val" id="tt-root">—</span></div>
+      <div class="tt-row"><span class="tt-key">Category</span><span class="tt-val" id="tt-cluster">—</span></div>
+      <div class="tt-row"><span class="tt-key">Frequency rank</span><span class="tt-val" id="tt-rank">—</span></div>
+      <div class="tt-row"><span class="tt-key">Approx. count</span><span class="tt-val" id="tt-count">—</span></div>
+      <div class="tt-row"><span class="tt-key">Exposures</span><span class="tt-val" id="tt-fam">—</span></div>
+    </div>
+    <div class="fam-bar"><div class="fam-fill" id="tt-fam-fill" style="width:0%"></div></div>
+    <div class="tt-root-fam" id="tt-root-fam-block">
+      <div class="tt-root-label">Root family</div>
+      <div class="tt-root-words" id="tt-root-words"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ EXPORT MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="export-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>📥 Export & Study Tools</h3>
+      <button class="modal-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-option" onclick="exportCSV('','')">
+        <div class="export-icon">📊</div>
+        <div class="export-info"><div class="ei-title">Full Word Database (CSV)</div><div class="ei-desc">All 200 words with frequency, root, cluster, and your progress</div></div>
+      </div>
+      <div class="export-option" onclick="exportCSV('salah_essentials','')">
+        <div class="export-icon">🕌</div>
+        <div class="export-info"><div class="ei-title">Salah Essentials Pack (CSV)</div><div class="ei-desc">Words used in daily prayer — print and stick on your wall</div></div>
+      </div>
+      <div class="export-option" onclick="exportCSV('','verb')">
+        <div class="export-icon">⚡</div>
+        <div class="export-info"><div class="ei-title">Verb Pack Only (CSV)</div><div class="ei-desc">All high-frequency Quranic verbs</div></div>
+      </div>
+      <div class="export-option" onclick="exportCSV('heart','')">
+        <div class="export-icon">💚</div>
+        <div class="export-info"><div class="ei-title">Heart & Soul Cluster (CSV)</div><div class="ei-desc">Emotional and inner state vocabulary</div></div>
+      </div>
+      <div class="export-option" onclick="exportCSV('hereafter','')">
+        <div class="export-icon">⚖️</div>
+        <div class="export-info"><div class="ei-title">Hereafter Cluster (CSV)</div><div class="ei-desc">Paradise, punishment, the Day of Judgment vocabulary</div></div>
+      </div>
+      <div class="export-option" onclick="printSalahSheet()">
+        <div class="export-icon">🖨️</div>
+        <div class="export-info"><div class="ei-title">Print Salah Reference Sheet</div><div class="ei-desc">Beautiful printable one-page Salah vocabulary card</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ WORD DETAIL MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="word-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="wm-title">Word Detail</h3>
+      <button class="modal-close" onclick="closeWordModal()">✕</button>
+    </div>
+    <div class="modal-body" id="wm-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ NOTIFICATIONS ═══════════════ -->
+<div id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  currentView:    "reading",
+  currentSurah:   1,
+  currentLevel:   "tilawah",
+  activePanel:    null,
+  familiarity:    {},
+  surahs:         [],
+  settings: {
+    injection_level:   25,
+    active_clusters:   ["salah_essentials"],
+    word_spacing:      100,
+    show_translation:  true,
+    show_morpheme_split: false,
+    translation_opacity: 100,
+    hifz_ghost:        false,
+    heatmap:           false,
+    color_pos:         false,
+    whats_left_mode:   false,
+    known_threshold:   50,
+    ar_font_size:      1.6,
+  },
+  rootGlowKey:    null,   // db_key being glowed
+  allWords:       [],     // word db cache
+  clusters:       {},     // cluster metadata
+};
+
+const CLUSTER_COLORS = {
+  salah_essentials:"#C9A84C", divine:"#1A5C38", guidance:"#1565C0",
+  heart:"#AD1457", people:"#E65100", hereafter:"#6A1B9A",
+  nature:"#2E7D32", verbs:"#BF360C", structure:"#546E7A", prophets:"#F57F17",
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  DATA LOADERS
+// ═══════════════════════════════════════════════════════════════
+async function loadFamiliarity() {
+  const r = await fetch("/api/familiarity");
+  const d = await r.json();
+  state.familiarity = d.familiarity || {};
+  updateStats(d.stats);
+}
+
+async function loadSurahs() {
+  const r = await fetch("/api/surahs");
+  state.surahs = await r.json();
+}
+
+async function loadWordDB() {
+  const r = await fetch("/api/words?top=200");
+  state.allWords = await r.json();
+  renderWordDB(state.allWords);
+}
+
+async function loadClusters() {
+  const r = await fetch("/api/clusters");
+  state.clusters = await r.json();
+}
+
+async function loadSurah(num) {
+  state.currentSurah = parseInt(num);
+  document.getElementById("surah-select").value = num;
+  document.getElementById("reading-pane").innerHTML =
+    `<div class="loading"><div class="spin"></div><br>Loading...</div>`;
+
+  const r = await fetch(`/api/render/${num}`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({settings: state.settings, familiarity: state.familiarity})
+  });
+  const data = await r.json();
+  if (data.error) { showNotif("Error: " + data.error); return; }
+
+  state.familiarity = data.familiarity;
+  updateStats(data.stats);
+  renderReadingPane(data);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIEW SWITCHER
+// ═══════════════════════════════════════════════════════════════
+function setView(v) {
+  state.currentView = v;
+  ["reading","worddb","heatmap","corpus","wazn","settings","bookview"].forEach(id => {
+    document.getElementById("view-"+id).style.display = "none";
+    document.getElementById("tb-"+id)?.classList.remove("active");
+  });
+  // All views use flex; bookview is column (handled by CSS)
+  document.getElementById("view-"+v).style.display = "flex";
+  document.getElementById("tb-"+v)?.classList.add("active");
+  if (v === "reading")  document.getElementById("view-reading").style.flexDirection = "row";
+  if (v === "bookview") loadBookView(state.currentSurah);
+}
+
+async function loadBookView(num) {
+  num = parseInt(num) || state.currentSurah;
+  state.currentSurah = num;
+
+  // Sync both surah selectors
+  const bvSel = document.getElementById("bv-surah-select");
+  if (bvSel) bvSel.value = num;
+  const mainSel = document.getElementById("surah-select");
+  if (mainSel) mainSel.value = num;
+
+  document.getElementById("bookview-pane").innerHTML =
+    `<div class="loading"><div class="spin"></div><br>Loading Book View…</div>`;
+
+  // Use book-view injection level (may differ from reading view)
+  const bvSettings = Object.assign({}, state.settings, {
+    injection_level: state.bvInjectionLevel ?? state.settings.injection_level
+  });
+
+  const r = await fetch(`/api/bookview/${num}`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({settings: bvSettings, familiarity: state.familiarity})
+  });
+  const data = await r.json();
+  if (data.error) { showNotif("Error: " + data.error); return; }
+
+  if (data.familiarity) state.familiarity = data.familiarity;
+  renderBookView(data);
+}
+
+function renderBookView(data) {
+  const pane = document.getElementById("bookview-pane");
+
+  // ── Surah header ──────────────────────────────────────────
+  let html = `<div class="book-surah-header">
+    <div class="book-name-ar">${data.surah.name_ar}</div>
+    <div class="book-name-en">${data.surah.name_en} &mdash; ${data.surah.name_tr}</div>
+    ${data.surah.description ? `<div class="book-desc">${data.surah.description}</div>` : ""}
+  </div>`;
+
+  // ── Bismillah (all except Al-Fatiha and At-Tawbah) ───────
+  if (data.surah.number !== 1 && data.surah.number !== 9) {
+    html += `<div class="book-bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>`;
+  }
+
+  // ── Flowing text ──────────────────────────────────────────
+  html += `<div class="book-text">`;
+
+  data.verses.forEach(verse => {
+    verse.words.forEach(w => {
+      if (w.show_arabic) {
+        const clr = CLUSTER_COLORS[w.cluster] || "var(--green)";
+        html += `<span class="bv-arabic" style="color:${clr}" title="${w.en || ""}">${w.ar}</span>`;
+      } else {
+        html += `<span class="bv-english">${w.en} </span>`;
+      }
+    });
+    // Subtle verse-end marker with verse number
+    html += `<span class="bv-sep">﴾${verse.number}﴿</span> `;
+  });
+
+  html += `</div>`;
+  pane.innerHTML = html;
+}
+
+function onBvInjectionChange(v) {
+  state.bvInjectionLevel = parseInt(v);
+  document.getElementById("bv-inj-pct").textContent = v + "%";
+  if (state.currentView === "bookview") loadBookView(state.currentSurah);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LEVEL SWITCHER
+// ═══════════════════════════════════════════════════════════════
+async function setLevel(level) {
+  state.currentLevel = level;
+  document.querySelectorAll(".level-pill").forEach(el => el.classList.remove("active"));
+  document.getElementById("lp-"+level)?.classList.add("active");
+
+  const r = await fetch("/api/nav-level/"+level);
+  const levelData = await r.json();
+
+  // Apply level settings
+  Object.assign(state.settings, {
+    injection_level:     levelData.injection_level,
+    active_clusters:     levelData.active_clusters || [],
+    word_spacing:        levelData.word_spacing,
+    show_translation:    levelData.show_translation,
+    translation_opacity: levelData.translation_opacity,
+    hifz_ghost:          levelData.hifz_ghost,
+    heatmap:             levelData.heatmap,
+    color_pos:           levelData.color_pos,
+    show_morpheme_split: levelData.show_morpheme_split,
+  });
+
+  // Sync UI
+  document.getElementById("inj-slider").value = state.settings.injection_level;
+  document.getElementById("inj-pct").textContent = state.settings.injection_level + "%";
+  syncToggleButtons();
+  applyBodyClasses();
+
+  // Show level desc bar
+  const bar = document.getElementById("level-desc-bar");
+  if (bar) bar.textContent = `${levelData.name}: ${levelData.description}`;
+
+  // Reload
+  if (state.currentView === "reading") loadSurah(state.currentSurah);
+  showNotif(`📚 Level set: ${levelData.name} — ${levelData.subtitle}`);
+}
+
+function syncToggleButtons() {
+  const s = state.settings;
+  document.getElementById("tog-translation").classList.toggle("on", s.show_translation);
+  document.getElementById("tog-morpheme").classList.toggle("on", s.show_morpheme_split);
+  document.getElementById("tog-heatmap").classList.toggle("on", s.heatmap);
+  document.getElementById("tog-color-pos").classList.toggle("on", s.color_pos);
+  document.getElementById("tog-hifz").classList.toggle("on", s.hifz_ghost);
+  document.getElementById("tog-whats-left").classList.toggle("on", s.whats_left_mode);
+  document.getElementById("pos-legend").style.display = s.color_pos ? "flex" : "none";
+}
+
+function applyBodyClasses() {
+  document.body.classList.toggle("hifz-mode", state.settings.hifz_ghost);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SETTINGS TOGGLES & SLIDERS
+// ═══════════════════════════════════════════════════════════════
+function toggleSetting(key) {
+  state.settings[key] = !state.settings[key];
+  syncToggleButtons();
+  applyBodyClasses();
+  if (state.currentView === "reading") loadSurah(state.currentSurah);
+}
+
+function onInjectionChange(v) {
+  state.settings.injection_level = parseInt(v);
+  document.getElementById("inj-pct").textContent = v + "%";
+  if (state.currentView === "reading") loadSurah(state.currentSurah);
+}
+
+function onSpacingChange(v) {
+  state.settings.word_spacing = parseInt(v);
+  document.querySelectorAll(".arabic-line").forEach(el => {
+    el.style.setProperty("--word-gap", v + "%");
+    el.style.gap = (v/10) + "px";
+  });
+}
+
+function onFontSizeChange(v) {
+  state.settings.ar_font_size = parseFloat(v);
+  document.querySelectorAll(".w-arabic").forEach(el => el.style.fontSize = v + "rem");
+}
+
+function onTranslationOpacity(v) {
+  state.settings.translation_opacity = parseInt(v);
+  document.querySelectorAll(".english-line").forEach(el => el.style.opacity = v / 100);
+}
+
+function onKnownThreshold(v) {
+  state.settings.known_threshold = parseInt(v);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  READING PANE RENDERER
+// ═══════════════════════════════════════════════════════════════
+function renderReadingPane(data) {
+  const pane = document.getElementById("reading-pane");
+  let html = "";
+
+  // Surah header
+  html += `<div class="surah-header">
+    <div class="surah-name-ar">${data.surah.name_ar}</div>
+    <div class="surah-name-en">${data.surah.name_en} (${data.surah.name_tr})</div>
+    <div class="surah-desc">${data.surah.description || ""}</div>
+  </div>`;
+
+  // Level desc bar
+  html += `<div class="level-desc-bar" id="level-desc-bar">
+    Loading level description...</div>`;
+
+  // Bismillah (for all except Fatiha and At-Tawbah)
+  if (data.surah.number !== 1 && data.surah.number !== 9) {
+    html += `<div class="bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>`;
+  }
+
+  // Verses
+  data.verses.forEach(verse => {
+    html += renderVerse(verse);
+  });
+
+  pane.innerHTML = html;
+
+  // Update level desc
+  setTimeout(() => {
+    fetch("/api/nav-level/" + state.currentLevel)
+      .then(r => r.json())
+      .then(d => {
+        const bar = document.getElementById("level-desc-bar");
+        if (bar) bar.textContent = `${d.name} Level: ${d.description}`;
+      });
+  }, 50);
+
+  // Attach event listeners
+  pane.querySelectorAll(".word-token").forEach(el => {
+    el.addEventListener("mouseenter", onWordHover);
+    el.addEventListener("mouseleave", onWordLeave);
+    el.addEventListener("click", onWordClick);
+  });
+
+  applyBodyClasses();
+  onSpacingChange(state.settings.word_spacing);
+  onFontSizeChange(state.settings.ar_font_size);
+}
+
+function renderVerse(verse) {
+  const showTrans = state.settings.show_translation;
+  const wl        = state.settings.whats_left_mode;
+  const heatmap   = state.settings.heatmap;
+  const colorPos  = state.settings.color_pos;
+  const morpheme  = state.settings.show_morpheme_split;
+
+  // Arabic line
+  let arLine = `<div class="arabic-line">`;
+  verse.words.forEach(w => {
+    const cls = [
+      "word-token",
+      colorPos && w.pos ? `pos-${w.pos}` : "",
+      heatmap ? `freq-token` : "",
+      w.is_known && wl ? "is-known whats-left-mode" : "",
+    ].filter(Boolean).join(" ");
+
+    const freqCls = heatmap ? `freq-${w.freq_band}` : "";
+    let arContent;
+    if (morpheme && w.db_key) {
+      // Morpheme split — show prefix|root|suffix
+      arContent = buildMorphemeHTML(w.ar, w.db_key);
+    } else {
+      arContent = `<span class="w-arabic ${freqCls}">${w.ar}</span>`;
+    }
+
+    arLine += `<span class="${cls}"
+      data-dbkey="${w.db_key||""}"
+      data-ar="${w.ar}"
+      data-en="${w.en}"
+      data-tr="${w.tr||""}"
+      data-cluster="${w.cluster||""}"
+      data-pos="${w.pos||""}"
+      data-rank="${w.rank||""}"
+      data-count="${w.count||0}"
+      data-fam="${w.familiarity_score||0}"
+      data-root="${w.root||""}"
+    >${arContent}</span>`;
+  });
+  arLine += `</div>`;
+
+  // English / hybrid line
+  let enLine = "";
+  if (showTrans) {
+    const opacity = state.settings.translation_opacity / 100;
+    enLine = `<div class="english-line" style="opacity:${opacity}">`;
+    verse.words.forEach(w => {
+      if (w.show_arabic) {
+        // Inject Arabic into English line
+        enLine += `<span class="en-token injected word-token"
+          data-dbkey="${w.db_key||""}"
+          data-ar="${w.ar}" data-en="${w.en}" data-tr="${w.tr||""}"
+          data-cluster="${w.cluster||""}" data-pos="${w.pos||""}"
+          data-rank="${w.rank||""}" data-count="${w.count||0}"
+          data-fam="${w.familiarity_score||0}" data-root="${w.root||""}"
+          style="color:${CLUSTER_COLORS[w.cluster]||"var(--green)"}"
+        >${w.ar}</span>`;
+      } else {
+        enLine += `<span class="en-token">${w.en}</span>`;
+      }
+    });
+    enLine += `</div>`;
+  }
+
+  return `<div class="verse-block">
+    <div class="verse-number">${verse.number}</div>
+    ${arLine}
+    ${enLine}
+  </div>`;
+}
+
+function buildMorphemeHTML(arabic, db_key) {
+  // Simple prefix/suffix detection for display
+  const PREFIXES = ["وَ","فَ","بِ","لِ","كَ","أَ","وَال","فَال","بِال","لِال"];
+  const SUFFIXES = ["هُمْ","كُمْ","هُ","هَا","نَا","كَ","هِمْ","وَا","ونَ","ينَ"];
+  let text = arabic, prefix = "", suffix = "";
+  for (const p of PREFIXES.sort((a,b)=>b.length-a.length)) {
+    if (text.startsWith(p) && text.length > p.length + 1) { prefix = p; text = text.slice(p.length); break; }
+  }
+  for (const s of SUFFIXES.sort((a,b)=>b.length-a.length)) {
+    if (text.endsWith(s) && text.length > s.length + 1) { suffix = s; text = text.slice(0,-s.length); break; }
+  }
+  return `<span class="morpheme-wrap">
+    ${suffix ? `<span class="morph-seg morph-suffix">${suffix}</span>` : ""}
+    <span class="morph-seg morph-root">${text}</span>
+    ${prefix ? `<span class="morph-seg morph-prefix">${prefix}</span>` : ""}
+  </span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOOLTIP
+// ═══════════════════════════════════════════════════════════════
+let tooltipTimer = null;
+function onWordHover(e) {
+  const el = e.currentTarget;
+  const dbKey = el.dataset.dbkey;
+  if (!dbKey) return;
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(() => showTooltip(el, dbKey), 150);
+  // Root glow
+  if (dbKey && dbKey !== state.rootGlowKey) {
+    state.rootGlowKey = dbKey;
+    glowRootFamily(dbKey);
+  }
+}
+
+function onWordLeave() {
+  clearTimeout(tooltipTimer);
+  hideTooltip();
+  clearGlow();
+  state.rootGlowKey = null;
+}
+
+async function showTooltip(el, dbKey) {
+  const r = await fetch(`/api/word/${encodeURIComponent(dbKey)}`);
+  const d = await r.json();
+  if (!d.tr) return;
+
+  const fam = state.familiarity[dbKey] || 0;
+  const famPct = Math.min(100, fam * 2);
+
+  document.getElementById("tt-ar").textContent    = dbKey;
+  document.getElementById("tt-tr").textContent    = d.tr || "";
+  document.getElementById("tt-en").textContent    = d.en || "";
+  document.getElementById("tt-root").textContent  = d.root || "—";
+  document.getElementById("tt-cluster").textContent = d.cluster || "—";
+  document.getElementById("tt-rank").textContent  = "#" + (d.rank || "—");
+  document.getElementById("tt-count").textContent = (d.count || 0).toLocaleString() + "×";
+  document.getElementById("tt-fam").textContent   = fam + " exposures";
+  document.getElementById("tt-fam-fill").style.width = famPct + "%";
+
+  // Root family
+  const fam_words = (d.root_family_details || []).slice(0, 8);
+  const rwContainer = document.getElementById("tt-root-words");
+  rwContainer.innerHTML = fam_words.map(w =>
+    `<span class="tt-rw" title="${w.en}">${w.arabic}</span>`).join("");
+  document.getElementById("tt-root-fam-block").style.display =
+    fam_words.length > 1 ? "block" : "none";
+
+  // Position
+  const tt = document.getElementById("tooltip");
+  const rect = el.getBoundingClientRect();
+  tt.style.left = Math.min(rect.left, window.innerWidth - 300) + "px";
+  tt.style.top  = (rect.bottom + 6) + "px";
+  tt.classList.add("visible");
+}
+
+function hideTooltip() {
+  document.getElementById("tooltip").classList.remove("visible");
+}
+
+function glowRootFamily(dbKey) {
+  clearGlow();
+  document.querySelectorAll(`.word-token`).forEach(el => {
+    if (el.dataset.root && el.dataset.dbkey && el.dataset.dbkey !== dbKey) {
+      // same root?
+      fetch(`/api/word/${encodeURIComponent(dbKey)}`).then(r=>r.json()).then(d=>{
+        if (d.root && el.dataset.root === d.root) el.classList.add("glowing");
+      });
+    }
+  });
+}
+
+function clearGlow() {
+  document.querySelectorAll(".glowing").forEach(el => el.classList.remove("glowing"));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WORD CLICK — open detail modal
+// ═══════════════════════════════════════════════════════════════
+async function onWordClick(e) {
+  const el  = e.currentTarget;
+  const key = el.dataset.dbkey;
+  if (!key) return;
+  await openWordModal(key);
+}
+
+async function openWordModal(key) {
+  const r = await fetch(`/api/word/${encodeURIComponent(key)}`);
+  const d = await r.json();
+  if (!d.tr) return;
+
+  const fam     = state.familiarity[key] || 0;
+  const isKnown = fam >= state.settings.known_threshold;
+  const clr     = CLUSTER_COLORS[d.cluster] || "var(--green)";
+
+  document.getElementById("wm-title").textContent = d.tr + " — " + d.en;
+  document.getElementById("wm-body").innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-family:var(--font-ar);font-size:3rem;color:${clr};direction:rtl;margin-bottom:4px">${key}</div>
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:4px">${d.tr}</div>
+      <div style="color:#888;font-size:.9rem">${d.en}</div>
+    </div>
+    <div style="background:var(--grey-light);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.83rem">
+        <div><span style="color:#888">Root:</span> <strong>${d.root||"—"}</strong></div>
+        <div><span style="color:#888">Cluster:</span> <strong style="color:${clr}">${d.cluster||"—"}</strong></div>
+        <div><span style="color:#888">Part of Speech:</span> <strong>${d.pos||"—"}</strong></div>
+        <div><span style="color:#888">Frequency Rank:</span> <strong>#${d.rank||"—"}</strong></div>
+        <div><span style="color:#888">Approx. Count:</span> <strong>${(d.count||0).toLocaleString()}×</strong></div>
+        <div><span style="color:#888">Your Exposures:</span> <strong>${fam}</strong></div>
+      </div>
+    </div>
+    ${d.root_family_details && d.root_family_details.length > 1 ? `
+    <div style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:8px;color:var(--green)">🌳 Root Family (${d.root})</div>
+      <div class="root-family-grid">
+        ${d.root_family_details.map(w=>`
+          <div class="rf-card" onclick="closeWordModal();openWordModal('${w.arabic}')">
+            <div class="rf-ar">${w.arabic}</div>
+            <div class="rf-tr">${w.tr}</div>
+            <div class="rf-en">${w.en}</div>
+          </div>`).join("")}
+      </div>
+    </div>` : ""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${isKnown
+        ? `<button onclick="markUnknown('${key}')" style="padding:8px 14px;background:#FFEBEE;color:var(--red);border:1.5px solid var(--red);border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600">Mark as Unknown</button>`
+        : `<button onclick="markKnown('${key}')" style="padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600">✓ Mark as Known</button>`
+      }
+      <button onclick="closeWordModal()" style="padding:8px 14px;background:var(--grey-light);color:var(--grey);border:1.5px solid var(--grey-mid);border-radius:6px;cursor:pointer;font-size:.82rem">Close</button>
+    </div>`;
+
+  document.getElementById("word-modal").classList.remove("hidden");
+}
+
+function closeWordModal() {
+  document.getElementById("word-modal").classList.add("hidden");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════════════════════
+async function openPanel(name) {
+  state.activePanel = name;
+  document.getElementById("panel-area").classList.add("open");
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+  document.getElementById("nav-"+name)?.classList.add("active");
+
+  const body  = document.getElementById("panel-body");
+  const title = document.getElementById("panel-title");
+
+  if (name === "clusters") {
+    title.textContent = "🎨 Thematic Clusters";
+    body.innerHTML = await buildClustersPanel();
+  } else if (name === "wordlist") {
+    title.textContent = "📋 Word List";
+    body.innerHTML = buildWordListPanel();
+  } else if (name === "roots") {
+    title.textContent = "🌳 Root Explorer";
+    body.innerHTML = await buildRootsPanel();
+  }
+}
+
+function closePanel() {
+  document.getElementById("panel-area").classList.remove("open");
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+  state.activePanel = null;
+}
+
+async function buildClustersPanel() {
+  const r = await fetch("/api/clusters");
+  const clusters = await r.json();
+  let html = "<p style='font-size:.78rem;color:#888;margin-bottom:12px'>Toggle clusters to inject into your reading. Words in active clusters appear in Arabic.</p>";
+
+  for (const [key, meta] of Object.entries(clusters)) {
+    const isActive = state.settings.active_clusters.includes(key);
+    const clr = CLUSTER_COLORS[key] || "#333";
+    const words = await (await fetch(`/api/cluster/${key}`)).json();
+    html += `<div class="cluster-card">
+      <div class="cluster-head" onclick="toggleCluster('${key}',this)">
+        <span style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${clr};display:inline-block"></span>
+          ${meta.label}
+        </span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="background:${isActive?clr:'#ccc'};color:#fff;border-radius:10px;font-size:.66rem;padding:1px 7px;font-weight:700">${isActive?"ON":"OFF"}</span>
+          <span class="toggle-icon">▼</span>
+        </span>
+      </div>
+      <div class="cluster-body" style="background:${clr}11">
+        ${words.slice(0,20).map(w=>`
+          <div class="cl-word" onclick="openWordModal('${w.arabic}')">
+            <div class="ar" style="color:${clr}">${w.arabic}</div>
+            <div class="en">${w.en}</div>
+          </div>`).join("")}
+      </div>
+    </div>`;
+  }
+  return html;
+}
+
+function toggleCluster(key, headEl) {
+  const clusters = state.settings.active_clusters;
+  const idx = clusters.indexOf(key);
+  if (idx === -1) clusters.push(key);
+  else            clusters.splice(idx, 1);
+  const isActive = clusters.includes(key);
+  const badge = headEl.querySelector(".cluster-head span:last-child span:first-child");
+  if (badge) {
+    badge.textContent = isActive ? "ON" : "OFF";
+    badge.style.background = isActive ? (CLUSTER_COLORS[key] || "#333") : "#ccc";
+  }
+  if (state.currentView === "reading") loadSurah(state.currentSurah);
+}
+
+function buildWordListPanel() {
+  const fam = state.familiarity;
+  let html = `<input class="wdb-search" type="search" placeholder="Search..." oninput="filterPanelWordList(this.value)" id="panel-wdb-search"><div id="panel-wdb-items">`;
+  state.allWords.slice(0, 80).forEach(([arabic, data]) => {
+    const f   = fam[arabic] || 0;
+    const pct = Math.min(100, f * 2);
+    const clr = CLUSTER_COLORS[data.cluster] || "#333";
+    html += `<div class="wdb-item" onclick="openWordModal('${arabic}')">
+      <div class="wdb-ar" style="color:${clr}">${arabic}</div>
+      <div class="wdb-info">
+        <div class="wdb-tr">${data.tr}</div>
+        <div class="wdb-en">${data.en}</div>
+      </div>
+      <div>
+        <div class="wdb-rank">#${data.rank}</div>
+        <div class="wdb-fam"><div class="wdb-fam-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  });
+  html += "</div>";
+  return html;
+}
+
+async function buildRootsPanel() {
+  const r = await fetch("/api/roots-summary");
+  const roots = await r.json();
+  let html = `<p style='font-size:.78rem;color:#888;margin-bottom:12px'>Every root family in the word database. Tap a root word to see its detail.</p>`;
+  roots.slice(0,40).forEach(item => {
+    html += `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-family:var(--font-ar);font-size:1.1rem;color:var(--green);direction:rtl">${item.root}</span>
+        <span style="font-size:.72rem;color:#aaa">${item.word_count} word${item.word_count>1?"s":""}</span>
+      </div>
+      <div class="root-family-grid" style="margin-top:0">
+        ${item.words.map(w=>`<div class="rf-card" onclick="openWordModal('${w.arabic}')">
+          <div class="rf-ar">${w.arabic}</div>
+          <div class="rf-tr">${w.tr}</div>
+          <div class="rf-en">${w.en}</div>
+        </div>`).join("")}
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function filterPanelWordList(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll("#panel-wdb-items .wdb-item").forEach(el => {
+    const text = el.textContent.toLowerCase();
+    el.style.display = text.includes(q) ? "" : "none";
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WORD DATABASE VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderWordDB(words) {
+  const list = document.getElementById("wdb-list");
+  if (!list) return;
+  list.innerHTML = words.map(([arabic, data]) => {
+    const f = state.familiarity[arabic] || 0;
+    const pct = Math.min(100, f * 2);
+    const clr = CLUSTER_COLORS[data.cluster] || "#333";
+    return `<div class="wdb-item" onclick="openWordModal('${arabic}')">
+      <div class="wdb-ar" style="color:${clr}">${arabic}</div>
+      <div class="wdb-info">
+        <div class="wdb-tr">${data.tr}</div>
+        <div class="wdb-en">${data.en} · ${data.cluster||""}</div>
+      </div>
+      <div>
+        <div class="wdb-rank">#${data.rank}</div>
+        <div class="wdb-fam"><div class="wdb-fam-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function filterWordDB(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll("#wdb-list .wdb-item").forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HEATMAP VIEW
+// ═══════════════════════════════════════════════════════════════
+async function renderHeatmap() {
+  const r = await fetch("/api/heatmap");
+  const words = await r.json();
+  const grid  = document.getElementById("heatmap-grid");
+  if (!grid) return;
+  grid.innerHTML = words.map(w => {
+    const size = Math.max(0.8, Math.min(1.8, w.count / 500));
+    return `<div class="hm-word hm-b${w.band}" onclick="openWordModal('${w.arabic}')"
+              title="${w.tr}: ${w.en}" style="font-size:${size}rem">
+      <div class="ar">${w.arabic}</div>
+      <div class="cnt">${w.count.toLocaleString()}</div>
+    </div>`;
+  }).join("");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CORPUS SEARCH VIEW
+// ═══════════════════════════════════════════════════════════════
+let corpusTimer = null;
+async function corpusSearch(q) {
+  clearTimeout(corpusTimer);
+  corpusTimer = setTimeout(async () => {
+    if (!q.trim()) {
+      document.getElementById("corpus-results").innerHTML =
+        `<div class="empty-state"><div class="es-icon">🔍</div><div class="es-msg">Start typing to search</div></div>`;
+      return;
+    }
+    const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const results = await r.json();
+    const container = document.getElementById("corpus-results");
+    if (!results.length) {
+      container.innerHTML = `<div class="empty-state"><div class="es-icon">😔</div><div class="es-msg">No results for "${q}"</div></div>`;
+      return;
+    }
+    container.innerHTML = results.map(w => {
+      const clr = CLUSTER_COLORS[w.cluster] || "#333";
+      return `<div class="search-result" onclick="openWordModal('${w.arabic}')">
+        <div class="sr-ar" style="color:${clr}">${w.arabic}</div>
+        <div class="sr-info">
+          <div class="sr-tr">${w.tr}</div>
+          <div class="sr-en">${w.en}</div>
+          <div class="sr-root">Root: ${w.root} · Rank #${w.rank} · ${(w.count||0).toLocaleString()}×</div>
+        </div>
+      </div>`;
+    }).join("");
+  }, 200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WAZN / PATTERN MINER VIEW
+// ═══════════════════════════════════════════════════════════════
+async function renderWazn() {
+  const r1 = await fetch("/api/wazn");
+  const wazn = await r1.json();
+  const container = document.getElementById("wazn-container");
+  if (!container) return;
+  container.innerHTML = Object.entries(wazn).map(([name, data]) => `
+    <div class="wazn-card">
+      <div class="wazn-head">
+        <span>${name}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="wazn-example">${data.example}</span>
+          <span class="wazn-count">${data.count}</span>
+        </span>
+      </div>
+      <div class="wazn-matches">
+        ${data.matches.map(w => `
+          <span class="wazn-match" onclick="openWordModal('${w.arabic}')"
+                title="${w.tr}: ${w.en}">${w.arabic}</span>`).join("")}
+      </div>
+    </div>`).join("");
+
+  const r2 = await fetch("/api/roots-summary");
+  const roots = await r2.json();
+  document.getElementById("roots-grid").innerHTML = roots.slice(0,50).map(item => `
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--grey-mid);
+         border-radius:6px;padding:4px 10px;margin:4px;cursor:pointer;font-size:.82rem"
+         onclick="openPanel('roots')">
+      <span style="font-family:var(--font-ar);font-size:1.1rem;color:var(--green);direction:rtl">${item.root}</span>
+      <span style="color:#aaa;font-size:.72rem">${item.word_count}</span>
+    </div>`).join("");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROFILES VIEW
+// ═══════════════════════════════════════════════════════════════
+async function renderProfiles() {
+  const r = await fetch("/api/profiles");
+  const profiles = await r.json();
+  const grid = document.getElementById("profiles-grid");
+  if (!grid) return;
+  grid.innerHTML = Object.entries(profiles).map(([key, p]) => `
+    <div class="profile-card" id="profile-${key}" onclick="applyProfile('${key}')">
+      <div class="pc-label">${p.label}</div>
+      <div class="pc-desc">${p.desc}</div>
+    </div>`).join("");
+}
+
+async function applyProfile(key) {
+  const r = await fetch("/api/profiles");
+  const profiles = await r.json();
+  const p = profiles[key];
+  if (!p) return;
+  Object.assign(state.settings, p.settings);
+  syncToggleButtons();
+  applyBodyClasses();
+  document.getElementById("inj-slider").value = state.settings.injection_level;
+  document.getElementById("inj-pct").textContent = state.settings.injection_level + "%";
+  document.querySelectorAll(".profile-card").forEach(el => el.classList.remove("active"));
+  document.getElementById("profile-"+key)?.classList.add("active");
+  if (state.currentView === "reading") loadSurah(state.currentSurah);
+  showNotif(`✅ Profile applied: ${p.label}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FAMILIARITY ACTIONS
+// ═══════════════════════════════════════════════════════════════
+async function markKnown(key) {
+  await fetch("/api/familiarity/mark-known", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({db_key:key})
+  });
+  state.familiarity[key] = state.settings.known_threshold;
+  closeWordModal();
+  showNotif(`✓ Marked as known: ${key}`);
+  loadSurah(state.currentSurah);
+}
+
+async function markUnknown(key) {
+  await fetch("/api/familiarity/mark-unknown", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({db_key:key})
+  });
+  state.familiarity[key] = 0;
+  closeWordModal();
+  showNotif(`↩️ Reset: ${key}`);
+  loadSurah(state.currentSurah);
+}
+
+async function resetProgress() {
+  if (!confirm("Reset all progress? This cannot be undone.")) return;
+  await fetch("/api/familiarity/reset", {method:"POST"});
+  state.familiarity = {};
+  updateStats({total_words:200, seen:0, known:0, unseen:200, pct_seen:0, pct_known:0});
+  showNotif("🔄 Progress reset");
+  loadSurah(state.currentSurah);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STATS
+// ═══════════════════════════════════════════════════════════════
+function updateStats(s) {
+  if (!s) return;
+  document.getElementById("pb-pct").textContent = (s.pct_seen || 0) + "%";
+  document.getElementById("pb-fill").style.width = (s.pct_seen || 0) + "%";
+  document.getElementById("stat-seen").textContent   = s.seen   || 0;
+  document.getElementById("stat-known").textContent  = s.known  || 0;
+  document.getElementById("stat-total").textContent  = s.total_words || 0;
+  document.getElementById("stat-unseen").textContent = s.unseen || 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SURAH NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function buildSurahNav() {
+  const container = document.getElementById("surah-nav-list");
+  const surahs = state.surahs;
+  container.innerHTML = surahs.map(s => `
+    <div class="nav-item" id="sn-${s.number}" onclick="loadSurah(${s.number})">
+      <span style="font-family:var(--font-ar);direction:rtl;min-width:28px">${s.name_ar}</span>
+      <span style="flex:1;font-size:.82rem">${s.name_en}</span>
+      <span style="font-size:.7rem;color:#aaa">${s.number}</span>
+    </div>`).join("");
+}
+
+function buildSurahSelect() {
+  const sel = document.getElementById("surah-select");
+  sel.innerHTML = state.surahs.map(s =>
+    `<option value="${s.number}">${s.number}. ${s.name_en} (${s.name_tr})</option>`
+  ).join("");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORT MODAL
+// ═══════════════════════════════════════════════════════════════
+function openExportModal()  { document.getElementById("export-modal").classList.remove("hidden"); }
+function closeExportModal() { document.getElementById("export-modal").classList.add("hidden"); }
+
+function exportCSV(cluster, pos) {
+  let url = "/api/export/csv?";
+  if (cluster) url += `cluster=${cluster}&`;
+  if (pos)     url += `pos=${pos}&`;
+  window.location.href = url;
+  closeExportModal();
+  showNotif("📊 CSV download started");
+}
+
+async function printSalahSheet() {
+  const r    = await fetch("/api/export/salah-sheet");
+  const data = await r.json();
+  const w    = window.open("","_blank");
+  w.document.write(`<!DOCTYPE html><html><head><title>Salah Essentials</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:700px;margin:0 auto;padding:20px;color:#222}
+    h1{color:#1A5C38;border-bottom:3px solid #C9A84C;padding-bottom:8px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .card{border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center;break-inside:avoid}
+    .ar{font-size:1.8rem;color:#1A5C38;direction:rtl}
+    .tr{font-weight:700;font-size:.9rem;margin:4px 0}
+    .en{font-size:.8rem;color:#888}
+    .fam{font-size:.7rem;color:#C9A84C;margin-top:4px}
+  </style></head><body>
+  <h1>🕌 Salah Essentials — Quranic Lab</h1>
+  <p style="color:#888;font-size:.85rem">Master these words and transform your daily prayer. Print and place on your wall.</p>
+  <div class="grid">
+    ${data.words.map(w=>`<div class="card">
+      <div class="ar">${w.arabic}</div>
+      <div class="tr">${w.tr}</div>
+      <div class="en">${w.en}</div>
+      <div class="fam">${w.familiarity||0} exposures</div>
+    </div>`).join("")}
+  </div></body></html>`);
+  w.document.close();
+  w.print();
+  closeExportModal();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DARK MODE
+// ═══════════════════════════════════════════════════════════════
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle("dark");
+  localStorage.setItem("ql_dark", isDark ? "1" : "0");
+  const btn = document.getElementById("tb-darkmode");
+  if (btn) btn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+}
+
+function applyStoredDarkMode() {
+  if (localStorage.getItem("ql_dark") === "1") {
+    document.body.classList.add("dark");
+    const btn = document.getElementById("tb-darkmode");
+    if (btn) btn.textContent = "☀️ Light";
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("collapsed");
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+function showNotif(msg, duration=2800) {
+  const n    = document.getElementById("notif");
+  const item = document.createElement("div");
+  item.className = "notif-item";
+  item.textContent = msg;
+  n.appendChild(item);
+  setTimeout(() => { item.style.opacity="0"; item.style.transition="opacity .3s";
+    setTimeout(() => item.remove(), 300); }, duration);
+}
+
+// Close modals on overlay click
+document.getElementById("export-modal").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeExportModal();
+});
+document.getElementById("word-modal").addEventListener("click", e => {
+  if (e.target === e.currentTarget) closeWordModal();
+});
+
+// Keyboard shortcuts
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { closeWordModal(); closeExportModal(); closePanel(); }
+  if (e.ctrlKey && e.key === "f") { e.preventDefault(); setView("corpus"); }
+});
+
+// Boot
+window.addEventListener("DOMContentLoaded", init);
+
+async function init() {
+  applyStoredDarkMode();
+  await loadFamiliarity();
+  await loadSurahs();
+  await loadWordDB();
+  await loadClusters();
+  setLevel("tilawah");
+  setView("reading");
+  loadSurah(1);
+  renderHeatmap();
+  renderWazn();
+  renderProfiles();
+  buildSurahNav();
+  buildSurahSelect();
+  buildBvSurahSelect();
+}
+
+function buildBvSurahSelect() {
+  const sel = document.getElementById("bv-surah-select");
+  if (!sel) return;
+  sel.innerHTML = state.surahs.map(s =>
+    `<option value="${s.number}">${s.number}. ${s.name_en} (${s.name_tr})</option>`
+  ).join("");
+  sel.value = state.currentSurah;
+  // Sync book view injection slider with current settings
+  const slider = document.getElementById("bv-inj-slider");
+  if (slider) {
+    slider.value = state.settings.injection_level;
+    document.getElementById("bv-inj-pct").textContent = state.settings.injection_level + "%";
+  }
+  state.bvInjectionLevel = state.settings.injection_level;
+}
+</script>
+</body>
+</html>
